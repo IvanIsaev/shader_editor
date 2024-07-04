@@ -13,6 +13,8 @@
 #include <optional>
 #include <set>
 
+#include <gsl/util>
+
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 #ifdef NDEBUG
@@ -32,7 +34,9 @@ namespace
     };
 
 
-    const auto m_extensions = std::vector<const char*>{ "VK_KHR_surface", "VK_KHR_portability_enumeration", "VK_KHR_win32_surface" };
+	const auto m_extensions = std::vector<const char*>{ VK_KHR_SURFACE_EXTENSION_NAME,
+		VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+		VK_KHR_WIN32_SURFACE_EXTENSION_NAME };
 
     VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
         auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -127,7 +131,7 @@ void VulkanInstance::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 void VulkanInstance::initVulkan(HWND hwnd, const VkExtent2D& windowSize)
 {
     createInstance();
-    setupDebugMessenger();
+    setupDebugMessenger(); // here
     createSurface(hwnd);
     pickPhysicalDevice();
     createLogicalDevice();
@@ -248,8 +252,8 @@ void VulkanInstance::createRenderPass() {
 
 void VulkanInstance::createGraphicsPipeline() {
     // TODO: create resources and move the files [isaev]
-    auto vertShaderCode = readFile("e:/projects/cpp/ShaderEditor/out/x64/Debug/shaders/vert.spv");
-    auto fragShaderCode = readFile("e:/projects/cpp/ShaderEditor/out/x64/Debug/shaders/frag.spv");
+    auto vertShaderCode = readFile("e:/projects/cpp/shader_editor/out/x64/Debug/shaders/vert.spv");
+    auto fragShaderCode = readFile("e:/projects/cpp/shader_editor/out/x64/Debug/shaders/frag.spv");
 
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -603,6 +607,7 @@ void VulkanInstance::cleanup() {
 	vkDestroyInstance(m_instance, nullptr);
 }
 
+// —оздание экземпл€ра Vulkan
 void VulkanInstance::createInstance() {
     if (enableValidationLayers && !checkValidationLayerSupport()) {
         throw std::runtime_error("validation layers requested, but not available!");
@@ -620,17 +625,17 @@ void VulkanInstance::createInstance() {
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
 
-    auto extensions = getRequiredExtensions(); // Here
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    auto extensions = getRequiredExtensions();
+    createInfo.enabledExtensionCount = gsl::narrow_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     if (enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.enabledLayerCount = gsl::narrow_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
 
         populateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        createInfo.pNext = &debugCreateInfo;
     }
     else {
         createInfo.enabledLayerCount = 0;
@@ -643,6 +648,7 @@ void VulkanInstance::createInstance() {
     }
 }
 
+// —оздание метода дл€ вывода отладочных сообщений
 void VulkanInstance::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -792,7 +798,7 @@ QueueFamilyIndices VulkanInstance::findQueueFamilies(VkPhysicalDevice device) {
     return indices;
 }
 
-// Custom method for Qt
+// ћетод возвращает список требуемых расширений
 std::vector<const char*> VulkanInstance::getRequiredExtensions() {
     std::vector<const char*> extensions(m_extensions);
 
@@ -803,6 +809,7 @@ std::vector<const char*> VulkanInstance::getRequiredExtensions() {
     return extensions;
 }
 
+// ћетод провер€ет наличие требуемых слоев в списке доступных слоев 
 bool VulkanInstance::checkValidationLayerSupport() {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
