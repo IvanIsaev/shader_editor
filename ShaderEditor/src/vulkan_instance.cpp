@@ -131,7 +131,7 @@ void VulkanInstance::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 void VulkanInstance::initVulkan(HWND hwnd, const VkExtent2D& windowSize)
 {
     createInstance();
-    setupDebugMessenger(); // here
+    setupDebugMessenger(); 
     createSurface(hwnd);
     pickPhysicalDevice();
     createLogicalDevice();
@@ -379,7 +379,7 @@ void VulkanInstance::createImageViews() {
     for (size_t i = 0; i < m_swapChainImages.size(); i++) {
         VkImageViewCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image = m_swapChainImages[i];
+        createInfo.image = gsl::at(m_swapChainImages, i);
         createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         createInfo.format = m_swapChainImageFormat;
         createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -392,7 +392,7 @@ void VulkanInstance::createImageViews() {
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
 
-        if (vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS) {
+        if (vkCreateImageView(m_device, &createInfo, nullptr, &gsl::at(m_swapChainImageViews, i)) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image views!");
         }
     }
@@ -449,8 +449,8 @@ VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, const 
     else {
         
         VkExtent2D actualExtent = {
-            static_cast<uint32_t>(windowSize.width),
-            static_cast<uint32_t>(windowSize.height)
+            gsl::narrow_cast<uint32_t>(windowSize.width),
+            gsl::narrow_cast<uint32_t>(windowSize.height)
         };
 
         actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
@@ -483,7 +483,7 @@ void VulkanInstance::createSwapChain(const VkExtent2D& windowSize) {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
+    const QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     if (indices.graphicsFamily != indices.presentFamily) {
@@ -707,21 +707,21 @@ void VulkanInstance::createLogicalDevice() {
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    VkPhysicalDeviceFeatures deviceFeatures{};
+    const VkPhysicalDeviceFeatures deviceFeatures{};
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.queueCreateInfoCount = gsl::narrow_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
     createInfo.pEnabledFeatures = &deviceFeatures;
 
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+    createInfo.enabledExtensionCount = gsl::narrow_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
     if (enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.enabledLayerCount = gsl::narrow_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
     }
     else {

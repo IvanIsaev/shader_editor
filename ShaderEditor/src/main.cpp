@@ -39,7 +39,9 @@ int main(int argc, char *argv[])
     QLoggingCategory::setFilterRules(QStringLiteral("qt.vulkan=true"));
 
     auto w2 = QWidget();
+    w2.setMinimumSize(512, 512);
 	w2.resize(512, 512);
+    w2.setMaximumSize(1024, 1024);
 	w2.show();
     
     w2.setUpdatesEnabled(false);
